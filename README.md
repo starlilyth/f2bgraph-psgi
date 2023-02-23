@@ -28,11 +28,11 @@ f2bgraph is made of two scripts:
   (WIP)
 
   usage: f2bgraph.pl [*options*]
-
- -  -h, --help         display this help and exit
- -  -v, --verbose      be verbose about what you do
- -  -V, --version      output version information and exit
-
+```
+  -h, --help         display this help and exit
+  -v, --verbose      be verbose about what you do
+  -V, --version      output version information and exit
+```
 
 - f2bgraph.psgi
 
