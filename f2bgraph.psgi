@@ -9,7 +9,7 @@ use Plack::Request;
 my $rrdpath = '/var/log'; # path to where the RRD databases are
 my $tmp_dir = '/tmp'; # temporary directory where the images are stored
 
-my $version = "20230221";
+my $version = "20230222";
 my $host = (POSIX::uname())[1];
 my $scriptname = 'f2bgraph.psgi';
 my $xpoints = 540;
@@ -18,7 +18,7 @@ my $ypoints = 160;
 my $ypoints_tot = 96;
 
 my $jaillist = `cat $rrdpath/f2bgraph-jails.txt`;
-#my $jaillist = "dovecot sasl";
+die "ERROR: no jail list\n" if (! $jaillist);
 chomp $jaillist;
 my @jails = split(' ', $jaillist);
 my @checked = @jails;
@@ -45,8 +45,7 @@ my %color = (
 	9 => 'ffa300'
 );
 
-sub rrd_graph(@)
-{
+sub rrd_graph(@) {
 	my ($range, $file, $ypoints, @rrdargs) = @_;
 	my $step = $range*$points_per_sample/$xpoints;
 	# choose carefully the end otherwise rrd will maybe pick the wrong RRA:
@@ -138,8 +137,7 @@ sub graph_tot($$) {
 	rrd_graph($range, $file, $ypoints_tot, @rrdargs);
 }
 
-sub print_html()
-{
+sub print_html() {
 	$content = <<HEADER;
 <!DOCTYPE html>
 <html>
@@ -177,20 +175,18 @@ input[type=submit]   {float: right;}
 HEADER
 
 	$content .= "<h1>Fail2Ban statistics for $host</h1>";
-
-	$content .= "<form><h2>Jail list: ";
+	$content .= "<form method=\"post\"><h2>Jail list: ";
 	for my $j (@jails) {
-		$content .= "<label for=\"$j\"> $j</label><input type=\"checkbox\" name=\"$j-check\" ";
+		$content .= "<label for=\"$j\"> $j</label><input type=\"checkbox\" name=\"$j-check\"";
 		my $checklist = join(',', @checked);
 		if ($checklist =~ /$j/) {
-			$content .= "checked>";
+			$content .= " checked>";
 		} else {
-			$content .= ">";
+			$content .= " >";
 		}
 	}
-	$content .= '<input type="submit" value="Select">';
+	$content .= '<input type="submit" name="\select\" value="Select">';
 	$content .= "</h2></form><br>";
-
 	$content .= "<ul id=\"jump\">";
 	for my $n (0..$#graphs) {
 		$content .= "  <li><a href=\"#G$n\">$graphs[$n]{title}</a>&nbsp;</li>";
@@ -213,8 +209,7 @@ FOOTER
 	return $content;
 }
 
-sub send_image($)
-{
+sub send_image($) {
 	my ($file)= @_;
 	my $size = -s $file;
 	open(IMG, $file) or die;
@@ -223,28 +218,30 @@ sub send_image($)
 	return $content;
 }
 
-sub main($$$)
-{
-	my ($req_uri, $qry_str,$refresh) = @_;
+sub main($$) {
+	my ($req_uri, $qry_str) = @_;
 	my $uri = $req_uri || '';
+	# trim off query strings
 	$uri =~ s/\/[^\/]+$//;
+	# trim off leading/trailing slash
 	$uri =~ s/^\///;
+	$uri =~ s/\/$//;
+	# change path slashes to dashes
 	$uri =~ s/\//-/g;
+	# convert tildes to a word
 	$uri =~ s/(\~|\%7E)/tilde-/g;
 	mkdir $tmp_dir, 0755 unless -d $tmp_dir;
 	mkdir "$tmp_dir/$uri", 0755 unless -d "$tmp_dir/$uri";
-	if(defined $qry_str and $qry_str =~ /^(\d+)-(c|t)$/) {
-		if( $qry_str =~ /^(\d+)-c$/) {
+	if (defined $qry_str and $qry_str =~ /^(\d+)-(c|t)$/) {
+		if ($qry_str =~ /^(\d+)-c$/) {
 			my $file = "$tmp_dir/$uri/f2bgraph_$1_cur.png";
 			graph($graphs[$1]{seconds}, $file);
 			send_image($file);
-		}
-		elsif( $qry_str =~ /^(\d+)-t$/) {
+		} elsif ($qry_str =~ /^(\d+)-t$/) {
 			my $file = "$tmp_dir/$uri/f2bgraph_$1_tot.png";
 			graph_tot($graphs[$1]{seconds}, $file);
 			send_image($file);
-		}
-		else {
+		}	else {
 			die "ERROR: invalid image argument\n";
 		}
 	}
@@ -258,16 +255,15 @@ my $app = sub {
   my $req = Plack::Request->new($env);
   my $req_uri = $req->request_uri;
   my $qry_str = $req->query_string;
-	my $refresh = 0;
-  if (defined $qry_str and $qry_str =~ /check/) {
- 	  @checked = ();
+  if ($req->method eq "POST") {
+		@checked = ();
 	  foreach my $jail (@jails) {
 		  push @checked, ($jail) if ($req->param("$jail-check"));
 		}
 	}
-  main($req_uri, $qry_str, $refresh);
+	main($req_uri, $qry_str);
   my $res = $req->new_response(200);
-  if(defined $qry_str and $qry_str =~ /^(\d+)-(c|t)$/) {
+  if (defined $qry_str and $qry_str =~ /^(\d+)-(c|t)$/) {
 	  $res->content_type('image/png');
   } else {
 	  $res->content_type('text/html');
