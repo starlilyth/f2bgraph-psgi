@@ -85,8 +85,8 @@ sub graph($$) {
 		"VDEF:$jail-1=$jail-curf,LAST",
 		"VDEF:$jail-2=$jail-mcurf,MAXIMUM",
 		"LINE2:$jail-curf#$color{$cval}:$jail failed",
-		'GPRINT:'.$jail.'-1:\: %8.0lf',
-		'GPRINT:'.$jail.'-2:Max\: %8.0lf',
+		'GPRINT:'.$jail.'-1:\: %6.0lf',
+		'GPRINT:'.$jail.'-2:Max\: %6.0lf',
 		);
 		$cval++;
 		push @rrdargs, (
@@ -95,8 +95,8 @@ sub graph($$) {
 		"VDEF:$jail-3=$jail-curb,LAST",
 		"VDEF:$jail-4=$jail-mcurb,MAXIMUM",
 		"LINE2:$jail-curb#$color{$cval}:$jail banned",
-		'GPRINT:'.$jail.'-3:\: %8.0lf',
-		'GPRINT:'.$jail.'-4:Max\: %8.0lf\l',
+		'GPRINT:'.$jail.'-3:\: %6.0lf',
+		'GPRINT:'.$jail.'-4:Max\: %6.0lf\l',
 		);
 		$cval++;
 	}
