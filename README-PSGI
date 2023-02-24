@@ -1,0 +1,31 @@
+The file f2bgraph.psgi is a self contained psgi application, ready to be served
+to a web server like Nginx by any PSGI capable app server, like Starman or Nginx Unit.
+
+The required Perl Plack module usually comes in a package with 'plackup'. 
+You can test your installation with something like: 
+
+  plackup --port 8000 /var/www/cgi-bin/f2bgraph/f2bgraph.psgi
+
+This is an example json file for configuring Unit by Nginx:
+
+  {
+    "listeners": {
+      "127.0.0.1:8000": {
+        "pass": "applications/f2bgraph"
+      }
+    },
+    "applications": {
+      "f2bgraph": {
+        "type": "perl",
+        "script": "/var/www/cgi-bin/f2bgraph/f2bgraph.psgi"
+      }
+    }
+  }
+
+Once the app server is running, the Nginx config entry can be as simple as: 
+
+  location /f2bgraph/ {
+    proxy_pass http://127.0.0.1:8000;
+  }
+
+Then f2bgraph could be accessed at https://your.host.tld/f2bgraph

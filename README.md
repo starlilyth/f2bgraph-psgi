@@ -1,15 +1,14 @@
 # f2bgraph
-  fail2ban graphing
+fail2ban graphing
 
-  f2bgraph is a simple statistics RRDtool frontend for fail2ban that produces daily, weekly, monthly and yearly graphs for all jails.
+f2bgraph is a simple statistics RRDtool frontend for fail2ban that produces daily, weekly, monthly and yearly graphs for all jails.
 
-  It is based on mailgraph by David Schweikert <david@schweikert.ch>, and functions similarly.
+It is based on mailgraph by David Schweikert <david@schweikert.ch>, and functions similarly.
 
 Required Modules
 ----------------
 
-- rrdtool and it's perl module (RRDs)
-  -> http://oss.oetiker.ch/rrdtool/
+- rrdtool and it's perl module (RRDs) -> http://oss.oetiker.ch/rrdtool/
 
 - Plack::Request
 
@@ -23,9 +22,9 @@ f2bgraph is made of two scripts:
 
 - f2bgraph.pl
 
-  This script polls 'fail2ban-client' and updates the RRD databases.
+  This script polls 'fail2ban-client' and updates RRD databases in /var/log.
 
-  (WIP)
+  Use & to put it in the background if you start it from a shell, or start it from systemd using the sample service file.
 
   usage: f2bgraph.pl [*options*]
 ```

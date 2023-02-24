@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+# f2bgraph -- an rrdtool frontend for fail2ban statistics
 
 use strict;
 use warnings;
@@ -7,8 +8,8 @@ use RRDs;
 
 my $version = "20230220";
 
-my $f2bcmd = '/bin/fail2ban-client status';
 my $rrdpath = "/var/log";
+my $f2bcmd = '/bin/fail2ban-client status';
 my $pidfile = '/run/f2bgraph.pid';
 my $continue = 1;
 

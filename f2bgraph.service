@@ -1,0 +1,11 @@
+# systemd unit service file for f2bgraph log graphing service
+
+[Unit]
+Description=f2bgraph-psgi log graphing service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/f2bgraph.pl
+
+[Install]
+WantedBy=multi-user.target
