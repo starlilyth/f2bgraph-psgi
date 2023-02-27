@@ -9,7 +9,7 @@ use Plack::Request;
 my $rrdpath = '/var/log'; # path to where the RRD databases are
 my $tmp_dir = '/tmp'; # temporary directory where the images are stored
 
-my $version = "20230222";
+my $version = "20230226";
 my $host = (POSIX::uname())[1];
 my $scriptname = 'f2bgraph.psgi';
 my $xpoints = 540;
@@ -22,7 +22,6 @@ die "ERROR: no jail list\n" if (! $jaillist);
 chomp $jaillist;
 my @jails = split(' ', $jaillist);
 my @checked = @jails;
-
 my $content;
 
 my @graphs = (
@@ -33,17 +32,26 @@ my @graphs = (
 );
 
 my %color = (
-	0 => 'f46a9b',
-	1 => 'e60049',
+	0 => '32CD32',
+	1 => '008000',
 	2 => '0bb4ff',
 	3 => '1a53ff',
-	4 => '32CD32',
-	5 => '008000',
+	4 => 'f46a9b',
+	5 => 'e60049',
 	6 => 'b33dc6',
 	7 => '9b19f5',
 	8 => 'e6d800',
 	9 => 'ffa300'
 );
+
+my %jcolor = ();
+my $cval = 0;
+foreach my $jail (@jails) {
+	$jcolor{$jail}{1} = $color{$cval};
+	$cval++;
+	$jcolor{$jail}{2} = $color{$cval};
+	$cval++;
+}
 
 sub rrd_graph(@) {
 	my ($range, $file, $ypoints, @rrdargs) = @_;
@@ -75,31 +83,27 @@ sub graph($$) {
 	my ($range, $file) = @_;
 	my $step = $range*$points_per_sample/$xpoints;
 	my @rrdargs;
-	my $cval = 0;
 	foreach my $rawjail (@checked) {
 		my $jail = substr( $rawjail, 0, 4 );
 		my $rrd = "$rrdpath/f2bgraph-$rawjail.rrd";
 		push @rrdargs, (
 		"DEF:$jail-curf=$rrd:curf:LAST",
-		"DEF:$jail-mcurf=$rrd:curf:MAX",
 		"VDEF:$jail-1=$jail-curf,LAST",
-		"VDEF:$jail-2=$jail-mcurf,MAXIMUM",
-		"LINE2:$jail-curf#$color{$cval}:$jail failed",
-		'GPRINT:'.$jail.'-1:\: %6.0lf',
-		'GPRINT:'.$jail.'-2:Max\: %6.0lf',
+		"VDEF:$jail-2=$jail-curf,MINIMUM",
+		"VDEF:$jail-3=$jail-curf,MAXIMUM",
+		"LINE2:$jail-curf#$jcolor{$rawjail}{1}:$jail failed",
+		'GPRINT:'.$jail.'-1:\: %5.0lf',
+		'GPRINT:'.$jail.'-2:Min\: %5.0lf',
+		'GPRINT:'.$jail.'-3:Max\: %5.0lf',
 		);
-		$cval++;
 		push @rrdargs, (
 		"DEF:$jail-curb=$rrd:curb:LAST",
-		"DEF:$jail-mcurb=$rrd:curb:MAX",
-		"VDEF:$jail-3=$jail-curb,LAST",
-		"VDEF:$jail-4=$jail-mcurb,MAXIMUM",
-		"LINE2:$jail-curb#$color{$cval}:$jail banned",
-		'GPRINT:'.$jail.'-3:\: %6.0lf',
-		'GPRINT:'.$jail.'-4:Max\: %6.0lf\l',
+		"VDEF:$jail-4=$jail-curb,LAST",
+		"LINE2:$jail-curb#$jcolor{$rawjail}{2}:$jail banned",
+		'GPRINT:'.$jail.'-4:\: %5.0lf\l',
 		);
-		$cval++;
 	}
+
 	push @rrdargs, ('--vertical-label', 'Current',);
 	rrd_graph($range, $file, $ypoints, @rrdargs);
 }
@@ -108,30 +112,25 @@ sub graph_tot($$) {
 	my ($range, $file) = @_;
 	my $step = $range*$points_per_sample/$xpoints;
 	my @rrdargs;
-	my $cval = 0;
 	foreach my $rawjail (@checked) {
 		my $jail = substr( $rawjail, 0, 4 );
 		my $rrd = "$rrdpath/f2bgraph-$rawjail.rrd";
 		push @rrdargs, (
 			"DEF:$jail-totf=$rrd:totf:LAST",
-			"DEF:$jail-mtotf=$rrd:totf:MAX",
-			"VDEF:$jail-5=$jail-totf,LAST",
+			"VDEF:$jail-5=$jail-totf,MINIMUM",
 			"VDEF:$jail-6=$jail-totf,MAXIMUM",
-			"LINE2:$jail-totf#$color{$cval}:$jail failed",
-			'GPRINT:'.$jail.'-5:\: %8.0lf',
-			'GPRINT:'.$jail.'-6:Max\: %8.0lf',
+			"LINE2:$jail-totf#$jcolor{$rawjail}{1}:$jail failed",
+			'GPRINT:'.$jail.'-5:Min\: %6.0lf',
+			'GPRINT:'.$jail.'-6:Max\: %6.0lf',
 		);
-		$cval++;
 		push @rrdargs, (
 			"DEF:$jail-totb=$rrd:totb:LAST",
-			"DEF:$jail-mtotb=$rrd:totb:MAX",
-			"VDEF:$jail-7=$jail-totb,LAST",
+			"VDEF:$jail-7=$jail-totb,MINIMUM",
 			"VDEF:$jail-8=$jail-totb,MAXIMUM",
-			"LINE2:$jail-totb#$color{$cval}:$jail banned",
-			'GPRINT:'.$jail.'-7:\: %8.0lf',
-			'GPRINT:'.$jail.'-8:Max\: %8.0lf\l',
+			"LINE2:$jail-totb#$jcolor{$rawjail}{2}:$jail banned",
+			'GPRINT:'.$jail.'-7:Min\: %6.0lf',
+			'GPRINT:'.$jail.'-8:Max\: %6.0lf\l',
 		);
-		$cval++;
 	}
 	push @rrdargs, ('--vertical-label', 'Total',);
 	rrd_graph($range, $file, $ypoints_tot, @rrdargs);
