@@ -9,7 +9,7 @@ use Plack::Request;
 my $rrdpath = '/var/log'; # path to where the RRD databases are
 my $tmp_dir = '/tmp'; # temporary directory where the images are stored
 
-my $version = "20230226";
+my $version = "20230302";
 my $host = (POSIX::uname())[1];
 my $scriptname = 'f2bgraph.psgi';
 my $xpoints = 540;
@@ -20,6 +20,7 @@ my $ypoints_tot = 96;
 my $jaillist = `cat $rrdpath/f2bgraph-jails.txt`;
 die "ERROR: no jail list\n" if (! $jaillist);
 chomp $jaillist;
+die "ERROR: jail list empty\n" if ($jaillist eq '');
 my @jails = split(' ', $jaillist);
 my @checked = @jails;
 my $content;
@@ -60,7 +61,7 @@ sub rrd_graph(@) {
 	my $end  = time; $end -= $end % $step;
 	my $date = localtime(time);
 	$date =~ s|:|\\:|g;
-	my ($graphret,$xs,$ys) = RRDs::graph($file,
+	RRDs::graph($file,
 		'--imgformat', 'PNG',
 		'--width', $xpoints,
 		'--height', $ypoints,
@@ -77,6 +78,7 @@ sub rrd_graph(@) {
 	);
 	my $ERR=RRDs::error;
 	die "ERROR: $ERR\n" if $ERR;
+  die "ERROR: no graph file created\n" if (! $file);
 }
 
 sub graph($$) {
@@ -211,7 +213,7 @@ FOOTER
 sub send_image($) {
 	my ($file)= @_;
 	my $size = -s $file;
-	open(IMG, $file) or die;
+	open(IMG, $file) or die "No graph file found (jail list empty?)\n";
 	my $data;
 	$content = $data while read(IMG, $data, $size)>0;
 	return $content;

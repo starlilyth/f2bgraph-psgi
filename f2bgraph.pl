@@ -6,7 +6,7 @@ use warnings;
 use Getopt::Long;
 use RRDs;
 
-my $version = "20230220";
+my $version = "20230302";
 
 my $rrdpath = "/var/log";
 my $f2bcmd = '/bin/fail2ban-client status';
@@ -55,6 +55,7 @@ sub main {
      $jaillist = $1;
     }
   }
+  die "No jail list. Is fail2ban running?\n" if (!defined $jaillist || $jaillist eq '');
   # make it an array and clean it up
   my @jails = split(/,/, $jaillist);
   s{^\s+|\s+$}{}g foreach @jails;
