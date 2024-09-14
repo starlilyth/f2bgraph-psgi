@@ -7,6 +7,7 @@ After=syslog.target network.target fail2ban.service
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/f2bgraph.pl
+ExecStopPost=/bin/rm /run/f2bgraph.pid
 
 [Install]
 WantedBy=multi-user.target

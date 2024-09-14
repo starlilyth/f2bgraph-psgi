@@ -70,6 +70,7 @@ sub main {
   # Start the main loop
   $SIG{INT}  = \&signal_handler;
   $SIG{TERM} = \&signal_handler;
+  $SIG{KILL} = \&signal_handler;
   while ($continue) {
     # loop through each jail
     foreach my $jail (@jails) {
@@ -131,8 +132,8 @@ sub init_rrd($) {
 }
 
 sub signal_handler {
-  $continue = 0;
   unlink $pidfile;
+  $continue = 0;
 }
 
 main;
